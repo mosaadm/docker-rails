@@ -1,0 +1,38 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Build Server Docker image
+      run: docker build -t my-ruby-server -f server/Dockerfile server/
+
+    - name: Build Client Docker image
+      run: docker build -t my-ruby-client -f client/Dockerfile client/
+
+    - name: Run Server Docker container
+      run: |
+        docker run -d -p 3333:3333 my-ruby-server > server_container_id
+        sleep 5  # Give the server some time to start
+
+    - name: Run Client Docker container
+      run: |
+       docker run --network="host" -d my-ruby-client > client_container_id
+       sleep 5 # Give the client some time to start
+
+    - name: Check Server Output
+      run: docker logs $(cat server_container_id)
+
+    - name: Check Client Output
+      run: docker logs $(cat client_container_id)
